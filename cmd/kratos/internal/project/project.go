@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -21,9 +22,10 @@ var CmdNew = &cobra.Command{
 }
 
 var (
-	repoURL string
-	branch  string
-	timeout string
+	repoURL   string
+	branch    string
+	timeout   string
+	namespace string
 )
 
 func init() {
@@ -34,6 +36,7 @@ func init() {
 	CmdNew.Flags().StringVarP(&repoURL, "repo-url", "r", repoURL, "layout repo")
 	CmdNew.Flags().StringVarP(&branch, "branch", "b", branch, "repo branch")
 	CmdNew.Flags().StringVarP(&timeout, "timeout", "t", timeout, "time out")
+	CmdNew.Flags().StringVarP(&namespace, "namespace", "n", namespace, "project namespace")
 }
 
 func run(cmd *cobra.Command, args []string) {
@@ -60,7 +63,13 @@ func run(cmd *cobra.Command, args []string) {
 	} else {
 		name = args[0]
 	}
-	p := &Project{Name: path.Base(name), Path: name}
+	baseName := path.Base(name)
+	if namespace == "" {
+		namespace = baseName
+	}
+
+	p := &Project{Name: baseName, Path: name, FullPath: filepath.Join(wd, baseName), Namespace: namespace}
+
 	done := make(chan error, 1)
 	go func() {
 		done <- p.New(ctx, wd, repoURL, branch)
